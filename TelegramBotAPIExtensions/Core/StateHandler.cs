@@ -1,5 +1,6 @@
 ﻿using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableTypes;
+using TelegramBotAPIExtensions.Core.FSM;
 
 namespace TelegramBotAPIExtensions.Core;
 
@@ -9,5 +10,5 @@ namespace TelegramBotAPIExtensions.Core;
 /// </summary>
 public abstract class StateHandler
 {
-    
+    protected FsmService _fsmService = Memory.FsmService;
 }

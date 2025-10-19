@@ -130,13 +130,16 @@ public class FsmService
     /// </summary>
     private void LoadMethods()
     {
-        // Получаем все классы, которые наследуют InteractionContext
+        // Получаем все классы, которые наследуют StateHandler
         Type targetType = typeof(StateHandler);
-        var classesList = Assembly.GetAssembly(targetType).GetTypes()
-            .Where(t => t.IsSubclassOf(targetType));
-
+        var classesList = AppDomain.CurrentDomain.GetAssemblies()
+            .SelectMany(assembly => assembly.GetTypes())
+            .Where(t => t.IsSubclassOf(targetType) && !t.IsAbstract && !t.IsInterface)
+            .ToList();
+        
         foreach (var classType in classesList)
         {
+            var instance = Activator.CreateInstance(classType);
             try
             {
                 var methods =
@@ -146,10 +149,10 @@ public class FsmService
                 {
                     var attribute = method.GetCustomAttribute<StateCallbackAttribute>();
                     if (attribute == null) continue;
-
+                    
                     try
                     {
-                        StateCallback delegateInstance = method.CreateDelegate<StateCallback>();
+                        StateCallback delegateInstance = method.CreateDelegate<StateCallback>(instance);
                         _callbacks.TryAdd(attribute.State, delegateInstance);
                     }
                     catch (Exception e)
@@ -160,6 +163,7 @@ public class FsmService
             }
             catch (Exception e)
             {
+                Console.WriteLine($"Ошибка обработки класса classType={classType}");
                 continue;
             }
         }
@@ -169,6 +173,7 @@ public class FsmService
     {
         if (!_callbacksIsLoaded)
             LoadMethods();
+
         
         if (_callbacks.TryGetValue(state, out var callback))
         {
