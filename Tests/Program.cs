@@ -1,6 +1,7 @@
 ﻿using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.GettingUpdates;
+using TelegramBotAPIExtensions.Core.Commands;
 using TelegramBotAPIExtensions.Core.FSM;
 
 namespace Tests;
@@ -24,6 +25,8 @@ class Program
         
         // Обязательное создание экземпляра FSM. В конструкторе он будет автоматически установлен в Memory
         FsmService fsmService = new FsmService(_client);
+        SlashCommandsService slashCommandsService = new SlashCommandsService(_client);
+        await slashCommandsService.RegisterCommandsAsync();
         
         // Устанавливаем тестовое состояние
         fsmService.SetState(_testUserId, "wait_mes1");
@@ -40,12 +43,15 @@ class Program
                 foreach (var update in updates)
                 {
                     // Проверяем, что у пользователя установлено состояние
-                    UserState? state = fsmService.GetState(_testUserId);
-                    if (state != null)
+                    if (!await slashCommandsService.TryExecuteCallbackAsync(update))
                     {
-                        // В нашем случае вызовется метод TestStateHandler.TestHandleAsync
-                        bool stateIsExecuted = await fsmService.TryExecuteCallbackAsync(state.State, update);
-                        Console.WriteLine($"Executed: {stateIsExecuted}");
+                        UserState? state = fsmService.GetState(_testUserId);
+                        if (state != null)
+                        {
+                            // В нашем случае вызовется метод TestInteractionHandler.TestHandleAsync
+                            bool stateIsExecuted = await fsmService.TryExecuteCallbackAsync(state.State, update);
+                            Console.WriteLine($"Executed: {stateIsExecuted}");
+                        }
                     }
                 }
                 updates = await _client.GetUpdatesAsync(updates.Last().UpdateId + 1);

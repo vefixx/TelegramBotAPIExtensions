@@ -126,12 +126,12 @@ public class FsmService
     }
     
     /// <summary>
-    /// Загружает все методы, которые имеют аттрибут <see cref="StateCallback"/> и наследуют <see cref="StateHandler"/>
+    /// Загружает все методы, которые имеют аттрибут <see cref="StateCallback"/> и наследуют <see cref="InteractionHandler"/>
     /// </summary>
     private void LoadMethods()
     {
-        // Получаем все классы, которые наследуют StateHandler
-        Type targetType = typeof(StateHandler);
+        // Получаем все классы, которые наследуют InteractionHandler
+        Type targetType = typeof(InteractionHandler);
         var classesList = AppDomain.CurrentDomain.GetAssemblies()
             .SelectMany(assembly => assembly.GetTypes())
             .Where(t => t.IsSubclassOf(targetType) && !t.IsAbstract && !t.IsInterface)
@@ -167,8 +167,16 @@ public class FsmService
                 continue;
             }
         }
-    }
 
+        _callbacksIsLoaded = true;
+    }
+    
+    /// <summary>
+    /// Попытка вызвать callback для указанного <paramref name="state"/>
+    /// </summary>
+    /// <param name="state"></param>
+    /// <param name="update"></param>
+    /// <returns></returns>
     public async Task<bool> TryExecuteCallbackAsync(string state, Update update)
     {
         if (!_callbacksIsLoaded)

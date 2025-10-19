@@ -10,9 +10,9 @@ public class InteractionContext
     public long ChatId => Message.Chat.Id;
     public User From => Message.From;
 
-    public InteractionContext(TelegramBotClient bot, Message message)
+    public InteractionContext(TelegramBotClient client, Message message)
     {
-        Bot = bot;
+        Bot = client;
         Message = message;
     }
 
