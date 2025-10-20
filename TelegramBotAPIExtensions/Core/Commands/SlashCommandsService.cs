@@ -9,6 +9,10 @@ using TelegramBotAPIExtensions.Core.Attributes;
 
 namespace TelegramBotAPIExtensions.Core.Commands;
 
+
+/// <summary>
+/// Сервис для обработки слеш-команд
+/// </summary>
 public class SlashCommandsService
 {
     /// <summary>

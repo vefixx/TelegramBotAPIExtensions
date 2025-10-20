@@ -7,6 +7,10 @@ using TelegramBotAPIExtensions.Core.Attributes;
 
 namespace TelegramBotAPIExtensions.Core.Commands;
 
+
+/// <summary>
+/// Сервис для обработки сообщений пользователя (можно применять для replykeyboard)
+/// </summary>
 public class MessageCommandsService
 {
     /// <summary>

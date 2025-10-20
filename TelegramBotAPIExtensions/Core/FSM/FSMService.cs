@@ -7,7 +7,7 @@ using TelegramBotAPIExtensions.Core.Attributes;
 namespace TelegramBotAPIExtensions.Core.FSM;
 
 /// <summary>
-/// Объект FSMService. Необходимо создавать один объект на всю сборку. 
+/// FSMService. Необходимо создавать один объект на всю сборку. 
 /// </summary>
 public class FsmService
 {
