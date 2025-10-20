@@ -22,4 +22,10 @@ public class TestInteractionHandler : InteractionHandler
     {
         Console.WriteLine(4);
     }
+
+    [MessageCallback("hello")]
+    public async Task TestHandleMessage(InteractionContext ctx)
+    {
+        Console.WriteLine(6);
+    }
 }

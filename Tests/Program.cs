@@ -9,7 +9,7 @@ namespace Tests;
 class Program
 {
     private TelegramBotClient _client;
-    private long _testUserId = 0;
+    private long _testUserId = 4;
     
     static async Task Main(string[] args)
     {
@@ -26,6 +26,7 @@ class Program
         // Обязательное создание экземпляра FSM. В конструкторе он будет автоматически установлен в Memory
         FsmService fsmService = new FsmService(_client);
         SlashCommandsService slashCommandsService = new SlashCommandsService(_client);
+        MessageCommandsService messageCommandsService = new MessageCommandsService(_client);
         await slashCommandsService.RegisterCommandsAsync();
         
         // Устанавливаем тестовое состояние
@@ -45,12 +46,15 @@ class Program
                     // Проверяем, что у пользователя установлено состояние
                     if (!await slashCommandsService.TryExecuteCallbackAsync(update))
                     {
-                        UserState? state = fsmService.GetState(_testUserId);
-                        if (state != null)
+                        if (!await messageCommandsService.TryExecuteCallbackAsync(update))
                         {
-                            // В нашем случае вызовется метод TestInteractionHandler.TestHandleAsync
-                            bool stateIsExecuted = await fsmService.TryExecuteCallbackAsync(state.State, update);
-                            Console.WriteLine($"Executed: {stateIsExecuted}");
+                            UserState? state = fsmService.GetState(update.Message.From.Id);
+                            if (state != null)
+                            {
+                                // В нашем случае вызовется метод TestInteractionHandler.TestHandleAsync
+                                bool stateIsExecuted = await fsmService.TryExecuteCallbackAsync(state.State, update);
+                                Console.WriteLine($"Executed: {stateIsExecuted}");
+                            }
                         }
                     }
                 }
