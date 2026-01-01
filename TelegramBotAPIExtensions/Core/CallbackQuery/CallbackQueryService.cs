@@ -84,13 +84,14 @@ public class CallbackQueryService
         {
             try
             {
-                await _client.AnswerCallbackQueryAsync(callbackQuery.Id, showAlert: false);
+                if (await _client.AnswerCallbackQueryAsync(callbackQuery.Id, showAlert: false))
+                {
+                    InteractionContext ctx = new InteractionContext(_client, update.Message);
+                    CallbackQueryData callbackQueryData = new CallbackQueryData(callbackData);
+                    await callback(ctx, callbackQueryData);
 
-                InteractionContext ctx = new InteractionContext(_client, update.Message);
-                CallbackQueryData callbackQueryData = new CallbackQueryData(callbackData);
-                await callback(ctx, callbackQueryData);
-
-                return true;
+                    return true;
+                }
             }
             catch (Exception e)
             {
