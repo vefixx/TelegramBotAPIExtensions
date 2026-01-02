@@ -1,5 +1,7 @@
 ﻿using System.Collections.Concurrent;
+using System.Globalization;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using Telegram.BotAPI;
 using Telegram.BotAPI.AvailableMethods;
 using Telegram.BotAPI.GettingUpdates;
@@ -10,12 +12,12 @@ namespace TelegramBotAPIExtensions.Core.CallbackQuery;
 public class CallbackQueryService
 {
     private delegate Task CallbackQueryHandler(InteractionContext ctx, CallbackQueryData callbackQueryData);
+    // string - паттерн регулярного выражения для каллбека
     private readonly ConcurrentDictionary<string, CallbackQueryHandler> _callbacks = new();
     private bool _callbacksIsLoaded = false;
     
     private readonly TelegramBotClient _client;
-
-
+    
     public CallbackQueryService(TelegramBotClient client)
     {
         _client = client;
@@ -44,12 +46,15 @@ public class CallbackQueryService
                 foreach (var method in methods)
                 {
                     var attribute = method.GetCustomAttribute<CallbackQueryAttribute>();
-                    if (attribute == null) continue;
+                    if (attribute == null) 
+                        continue;
                     
                     try
                     {
+                        // Преобразуем шаблон типа {paramName} в регулярное выражение
+                        string regexPattern = Regex.Replace(attribute.PatternData, @"\{(\w+)\}", @"(?<$1>[^:]+)");
                         CallbackQueryHandler delegateInstance = method.CreateDelegate<CallbackQueryHandler>(instance);
-                        _callbacks.TryAdd(attribute.TargetData, delegateInstance);
+                        _callbacks.TryAdd(regexPattern, delegateInstance);
                     }
                     catch (Exception e)
                     {
@@ -79,25 +84,65 @@ public class CallbackQueryService
             LoadMethods();
         
         var callbackData = callbackQuery.Data;
-
-        if (_callbacks.TryGetValue(callbackData, out var callback))
+        
+        // Проверяем каждый зарегистрированный шаблон
+        foreach (var kv in _callbacks)
         {
-            try
-            {
-                if (await _client.AnswerCallbackQueryAsync(callbackQuery.Id, showAlert: false))
-                {
-                    InteractionContext ctx = new InteractionContext(_client, update.Message);
-                    CallbackQueryData callbackQueryData = new CallbackQueryData(callbackData);
-                    await callback(ctx, callbackQueryData);
+            string pattern = kv.Key;
+            CallbackQueryHandler handler = kv.Value;
 
-                    return true;
+            var match = Regex.Match(callbackData, "^" + pattern + "$");
+            if (match.Success)
+            {
+                try
+                {
+                    if (await _client.AnswerCallbackQueryAsync(callbackQuery.Id, showAlert: false))
+                    {
+                        // Получаем каждый параметр из callbackData
+                        // Например, мы можем указать в callbackData строку типа
+                        // "cat:{catName}:{id}", тогда сможем извлечь параметр catName и id
+                        var parameters = new Dictionary<string, string>();
+                        foreach (Group group in match.Groups)
+                        {
+                            if (group.Success && !string.IsNullOrEmpty(group.Name) && group.Name != "0")
+                            {
+                                parameters[group.Name] = group.Value;
+                            }
+                        }
+                        
+                        InteractionContext ctx = new InteractionContext(_client, update.Message);
+                        CallbackQueryData callbackQueryData = new CallbackQueryData(callbackData, parameters);
+                        await handler(ctx, callbackQueryData);
+
+                        return true;
+                    }
+                }
+                catch (Exception e)
+                {
+                    continue;
                 }
             }
-            catch (Exception e)
-            {
-                // ignored
-            }
         }
+        
+        //
+        // if (_callbacks.TryGetValue(callbackData, out var callback))
+        // {
+        //     try
+        //     {
+        //         if (await _client.AnswerCallbackQueryAsync(callbackQuery.Id, showAlert: false))
+        //         {
+        //             InteractionContext ctx = new InteractionContext(_client, update.Message);
+        //             CallbackQueryData callbackQueryData = new CallbackQueryData(callbackData);
+        //             await callback(ctx, callbackQueryData);
+        //
+        //             return true;
+        //         }
+        //     }
+        //     catch (Exception e)
+        //     {
+        //         // ignored
+        //     }
+        // }
 
         return false;
     }

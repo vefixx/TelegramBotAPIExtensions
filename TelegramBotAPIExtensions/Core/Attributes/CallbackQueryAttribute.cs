@@ -3,10 +3,10 @@
 [AttributeUsage(AttributeTargets.Method)]
 public class CallbackQueryAttribute : Attribute
 {
-    public string TargetData { get; }
+    public string PatternData { get; }
 
-    public CallbackQueryAttribute(string targetData)
+    public CallbackQueryAttribute(string patternData)
     {
-        TargetData = targetData;
+        PatternData = patternData;
     }
 }
