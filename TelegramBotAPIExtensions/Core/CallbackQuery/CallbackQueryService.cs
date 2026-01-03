@@ -96,26 +96,23 @@ public class CallbackQueryService
             {
                 try
                 {
-                    if (await _client.AnswerCallbackQueryAsync(callbackQuery.Id, showAlert: false))
+                    // Получаем каждый параметр из callbackData
+                    // Например, мы можем указать в callbackData строку типа
+                    // "cat:{catName}:{id}", тогда сможем извлечь параметр catName и id
+                    var parameters = new Dictionary<string, string>();
+                    foreach (Group group in match.Groups)
                     {
-                        // Получаем каждый параметр из callbackData
-                        // Например, мы можем указать в callbackData строку типа
-                        // "cat:{catName}:{id}", тогда сможем извлечь параметр catName и id
-                        var parameters = new Dictionary<string, string>();
-                        foreach (Group group in match.Groups)
+                        if (group.Success && !string.IsNullOrEmpty(group.Name) && group.Name != "0")
                         {
-                            if (group.Success && !string.IsNullOrEmpty(group.Name) && group.Name != "0")
-                            {
-                                parameters[group.Name] = group.Value;
-                            }
+                            parameters[group.Name] = group.Value;
                         }
-                        
-                        InteractionContext ctx = new InteractionContext(_client, update.Message);
-                        CallbackQueryData callbackQueryData = new CallbackQueryData(callbackData, parameters);
-                        await handler(ctx, callbackQueryData);
-
-                        return true;
                     }
+                        
+                    InteractionContext ctx = new InteractionContext(_client, update.Message);
+                    CallbackQueryData callbackQueryData = new CallbackQueryData(callbackData, parameters, callbackQuery);
+                    await handler(ctx, callbackQueryData);
+
+                    return true;
                 }
                 catch (Exception e)
                 {
