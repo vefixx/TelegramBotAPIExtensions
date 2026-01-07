@@ -99,10 +99,10 @@ public class FsmService
     /// <param name="value">Значение</param>
     public void SetData(long userId, string key, object value)
     {
-        if (_states.TryGetValue(userId, out var state))
-        {
-            state.Data[key] = value;
-        }
+        // Получаем или создаём UserState с базовым состоянием по умолчанию
+        UserState userState = _states.GetOrAdd(userId, _ => new UserState("default"));
+        userState.Data[key] = value;
+        userState.LastActivity = DateTime.Now;
     }
 
     /// <summary>
